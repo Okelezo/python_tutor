@@ -40,6 +40,24 @@
           </div>
         </form>
 
+        {% if result %}
+        <div class="result {% if result.passed %}ok{% else %}bad{% endif %}">
+          <div class="row">
+            {% if result.passed %}
+            <strong>Passed</strong>
+            {% else %}
+            <strong>Not yet</strong>
+            {% endif %}
+            {% if result.failed_test %}
+            <span class="muted">{{ result.failed_test }}</span>
+            {% endif %}
+          </div>
+          {% if result.output %}
+          <pre class="output">{{ result.output }}</pre>
+          {% endif %}
+        </div>
+        {% endif %}
+
         <div class="split">
           <div class="panel">
             <h3>Hints</h3>
@@ -78,24 +96,6 @@
             <div id="checkpointList" class="checkpoints"></div>
           </div>
         </div>
-
-        {% if result %}
-        <div class="result {% if result.passed %}ok{% else %}bad{% endif %}">
-          <div class="row">
-            {% if result.passed %}
-            <strong>Passed</strong>
-            {% else %}
-            <strong>Not yet</strong>
-            {% endif %}
-            {% if result.failed_test %}
-            <span class="muted">{{ result.failed_test }}</span>
-            {% endif %}
-          </div>
-          {% if result.output %}
-          <pre class="output">{{ result.output }}</pre>
-          {% endif %}
-        </div>
-        {% endif %}
       </section>
 
       <script id="exerciseData" type="application/json">{{ exercise_data_json | safe }}</script>
