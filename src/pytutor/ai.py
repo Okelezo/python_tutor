@@ -17,9 +17,19 @@ def ai_enabled() -> bool:
     return bool(api_key.strip())
 
 
-def chat(prompt: str) -> str:
-    base_url, api_key, model = _cfg()
-    if not api_key.strip():
+def chat(
+    prompt: str,
+    *,
+    api_key: str | None = None,
+    base_url: str | None = None,
+    model: str | None = None,
+) -> str:
+    base_url_cfg, api_key_cfg, model_cfg = _cfg()
+    base_url = base_url or base_url_cfg
+    api_key = (api_key or api_key_cfg).strip()
+    model = model or model_cfg
+
+    if not api_key:
         raise RuntimeError(
             "AI is not configured. Set PYTUTOR_OPENAI_API_KEY (or OPENAI_API_KEY) to enable AI hints/review."
         )

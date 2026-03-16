@@ -12,6 +12,12 @@
         <a class="link" href="/track/{{ track.id }}">← {{ track.title }}</a>
         <h1>{{ exercise.title }}</h1>
         <p class="muted">{{ lesson_title }} • {{ exercise.id }}</p>
+        <div class="row" style="margin-top:10px">
+          <div class="muted">Signed in as {{ user.email }}</div>
+          <form method="post" action="/auth/logout">
+            <button class="btn secondary" type="submit">Logout</button>
+          </form>
+        </div>
       </header>
 
       <section class="card">
@@ -52,6 +58,12 @@
             {% endif %}
 
             <h3>AI</h3>
+            <label class="label" style="margin-top:10px">Your OpenAI key (stored in your browser)</label>
+            <input class="input" id="aiKey" type="password" placeholder="sk-..." />
+            <div class="actions">
+              <button class="btn secondary" type="button" id="saveAiKey">Save key</button>
+              <button class="btn secondary" type="button" id="clearAiKey">Clear</button>
+            </div>
             <div class="actions">
               <button class="btn secondary" type="button" id="aiHint">AI hint</button>
               <button class="btn secondary" type="button" id="aiExplain">AI explain</button>
@@ -101,6 +113,7 @@
 
           const draftKey = `pytutor:draft:${trackId}:${exerciseId}`;
           const cpKey = `pytutor:checkpoints:${trackId}:${exerciseId}`;
+          const aiKeyStorage = 'pytutor:ai:key';
 
           function setAi(text) {
             const out = document.getElementById('aiOutput');
@@ -193,9 +206,13 @@
 
           async function callAi(endpoint) {
             setAi('Thinking...');
+            const key = (localStorage.getItem(aiKeyStorage) || '').trim();
             const resp = await fetch(endpoint, {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
+              headers: {
+                'Content-Type': 'application/json',
+                ...(key ? { 'X-Pytutor-OpenAI-Key': key } : {})
+              },
               body: JSON.stringify({ track_id: trackId, exercise_id: exerciseId, code: codeEl.value })
             });
             const data = await resp.json().catch(() => ({}));
@@ -209,6 +226,18 @@
           document.getElementById('aiHint').onclick = () => callAi('/api/ai/hint');
           document.getElementById('aiExplain').onclick = () => callAi('/api/ai/explain');
           document.getElementById('aiReview').onclick = () => callAi('/api/ai/review');
+
+          const aiKeyEl = document.getElementById('aiKey');
+          aiKeyEl.value = localStorage.getItem(aiKeyStorage) || '';
+          document.getElementById('saveAiKey').onclick = () => {
+            localStorage.setItem(aiKeyStorage, (aiKeyEl.value || '').trim());
+            setAi('AI key saved locally in this browser.');
+          };
+          document.getElementById('clearAiKey').onclick = () => {
+            localStorage.removeItem(aiKeyStorage);
+            aiKeyEl.value = '';
+            setAi('AI key cleared.');
+          };
 
           codeEl.addEventListener('input', () => {
             try {

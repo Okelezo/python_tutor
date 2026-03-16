@@ -12,6 +12,12 @@
         <a class="link" href="/">← All tracks</a>
         <h1>{{ track.title }}</h1>
         <p class="muted">{{ track.level }} • {{ track.description }}</p>
+        <div class="row" style="margin-top:10px">
+          <div class="muted">Signed in as {{ user.email }}</div>
+          <form method="post" action="/auth/logout">
+            <button class="btn secondary" type="submit">Logout</button>
+          </form>
+        </div>
       </header>
 
       {% for lesson in track.lessons %}
