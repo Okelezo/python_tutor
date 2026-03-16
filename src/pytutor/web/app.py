@@ -5,6 +5,7 @@ import os
 from pathlib import Path
 
 import uvicorn
+from dotenv import load_dotenv
 from fastapi import Body, FastAPI, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
@@ -14,6 +15,8 @@ from ..content import list_tracks, load_track
 from ..engine import grade_submission
 from ..progress import load_progress, mark_completed
 from .. import ai
+
+load_dotenv()
 
 app = FastAPI()
 

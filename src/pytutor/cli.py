@@ -1,14 +1,16 @@
 from __future__ import annotations
 
 import textwrap
-
 import typer
+from dotenv import load_dotenv
 from rich.console import Console
 from rich.markdown import Markdown
 
 from .content import list_tracks, load_track
 from .engine import grade_submission
 from .progress import load_progress, mark_completed
+
+load_dotenv()
 
 app = typer.Typer(no_args_is_help=True)
 track_app = typer.Typer(no_args_is_help=True)
