@@ -9,6 +9,8 @@ class Exercise(BaseModel):
     prompt_md: str
     starter_code: str
     tests_code: str
+    hints: list[str] = Field(default_factory=list)
+    solution_code: str | None = None
 
 
 class Lesson(BaseModel):

@@ -21,15 +21,51 @@
       <section class="card">
         <form method="post">
           <label class="label">Your code</label>
-          <textarea class="code" name="code" spellcheck="false">{{ code }}</textarea>
+          <textarea class="code" id="code" name="code" spellcheck="false">{{ code }}</textarea>
           <div class="actions">
             <button class="btn" type="submit">Run tests</button>
             <button class="btn secondary" type="submit" formaction="/track/{{ track.id }}/exercise/{{ exercise.id }}/reset">Reset</button>
+            <button class="btn secondary" type="button" id="saveDraft">Save draft</button>
+            <button class="btn secondary" type="button" id="loadDraft">Load draft</button>
+            <button class="btn secondary" type="button" id="saveCheckpoint">Checkpoint</button>
             {% if exercise.id in completed %}
             <span class="pill ok">Completed</span>
             {% endif %}
           </div>
         </form>
+
+        <div class="split">
+          <div class="panel">
+            <h3>Hints</h3>
+            {% if exercise.hints %}
+              <ol class="list">
+                {% for h in exercise.hints %}
+                  <li>{{ h }}</li>
+                {% endfor %}
+              </ol>
+            {% else %}
+              <div class="muted">No built-in hints for this exercise yet.</div>
+            {% endif %}
+
+            {% if exercise.solution_code %}
+              <button class="btn secondary" type="button" id="revealSolution">Reveal solution</button>
+            {% endif %}
+
+            <h3>AI</h3>
+            <div class="actions">
+              <button class="btn secondary" type="button" id="aiHint">AI hint</button>
+              <button class="btn secondary" type="button" id="aiExplain">AI explain</button>
+              <button class="btn secondary" type="button" id="aiReview">AI review</button>
+            </div>
+            <pre class="output" id="aiOutput" style="display:none"></pre>
+          </div>
+
+          <div class="panel">
+            <h3>Checkpoints</h3>
+            <div class="muted">Saved in your browser for this exercise.</div>
+            <div id="checkpointList" class="checkpoints"></div>
+          </div>
+        </div>
 
         {% if result %}
         <div class="result {% if result.passed %}ok{% else %}bad{% endif %}">
@@ -49,6 +85,141 @@
         </div>
         {% endif %}
       </section>
+
+      <script id="exerciseData" type="application/json">{{ exercise_data_json | safe }}</script>
+
+      <script>
+        (function () {
+          const raw = document.getElementById('exerciseData').textContent || '{}';
+          const data = JSON.parse(raw);
+
+          const trackId = data.trackId;
+          const exerciseId = data.exerciseId;
+          const codeEl = document.getElementById('code');
+          const starterCode = data.starterCode || '';
+          const solutionCode = data.solutionCode || '';
+
+          const draftKey = `pytutor:draft:${trackId}:${exerciseId}`;
+          const cpKey = `pytutor:checkpoints:${trackId}:${exerciseId}`;
+
+          function setAi(text) {
+            const out = document.getElementById('aiOutput');
+            out.style.display = 'block';
+            out.textContent = text;
+          }
+
+          function loadCheckpoints() {
+            try {
+              return JSON.parse(localStorage.getItem(cpKey) || '[]');
+            } catch {
+              return [];
+            }
+          }
+
+          function saveCheckpoints(items) {
+            localStorage.setItem(cpKey, JSON.stringify(items));
+          }
+
+          function renderCheckpoints() {
+            const root = document.getElementById('checkpointList');
+            const items = loadCheckpoints();
+            root.innerHTML = '';
+            if (!items.length) {
+              root.innerHTML = '<div class="muted">No checkpoints yet.</div>';
+              return;
+            }
+            items.forEach((cp, idx) => {
+              const row = document.createElement('div');
+              row.className = 'checkpoint';
+              const left = document.createElement('div');
+              left.innerHTML = `<div class="title">${cp.title}</div><div class="muted">${new Date(cp.ts).toLocaleString()}</div>`;
+              const actions = document.createElement('div');
+              actions.className = 'actions';
+              const loadBtn = document.createElement('button');
+              loadBtn.className = 'btn secondary';
+              loadBtn.type = 'button';
+              loadBtn.textContent = 'Load';
+              loadBtn.onclick = () => { codeEl.value = cp.code; };
+              const delBtn = document.createElement('button');
+              delBtn.className = 'btn secondary';
+              delBtn.type = 'button';
+              delBtn.textContent = 'Delete';
+              delBtn.onclick = () => {
+                const next = loadCheckpoints().filter((_, i) => i !== idx);
+                saveCheckpoints(next);
+                renderCheckpoints();
+              };
+              actions.appendChild(loadBtn);
+              actions.appendChild(delBtn);
+              row.appendChild(left);
+              row.appendChild(actions);
+              root.appendChild(row);
+            });
+          }
+
+          document.getElementById('saveDraft').onclick = () => {
+            localStorage.setItem(draftKey, codeEl.value);
+            setAi('Draft saved.');
+          };
+
+          document.getElementById('loadDraft').onclick = () => {
+            const d = localStorage.getItem(draftKey);
+            if (d == null) {
+              setAi('No saved draft found.');
+              return;
+            }
+            codeEl.value = d;
+            setAi('Draft loaded.');
+          };
+
+          document.getElementById('saveCheckpoint').onclick = () => {
+            const title = prompt('Checkpoint name?', `Checkpoint ${loadCheckpoints().length + 1}`);
+            if (!title) return;
+            const items = loadCheckpoints();
+            items.unshift({ title, ts: Date.now(), code: codeEl.value });
+            saveCheckpoints(items.slice(0, 20));
+            renderCheckpoints();
+            setAi('Checkpoint saved.');
+          };
+
+          const reveal = document.getElementById('revealSolution');
+          if (reveal) {
+            reveal.onclick = () => {
+              const ok = confirm('Reveal the solution? This will replace your current editor contents.');
+              if (!ok) return;
+              codeEl.value = solutionCode || starterCode;
+            };
+          }
+
+          async function callAi(endpoint) {
+            setAi('Thinking...');
+            const resp = await fetch(endpoint, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ track_id: trackId, exercise_id: exerciseId, code: codeEl.value })
+            });
+            const data = await resp.json().catch(() => ({}));
+            if (!resp.ok) {
+              setAi((data && (data.detail || data.message)) || `Request failed (${resp.status})`);
+              return;
+            }
+            setAi(data.text || '');
+          }
+
+          document.getElementById('aiHint').onclick = () => callAi('/api/ai/hint');
+          document.getElementById('aiExplain').onclick = () => callAi('/api/ai/explain');
+          document.getElementById('aiReview').onclick = () => callAi('/api/ai/review');
+
+          codeEl.addEventListener('input', () => {
+            try {
+              localStorage.setItem(draftKey, codeEl.value);
+            } catch {
+            }
+          });
+
+          renderCheckpoints();
+        })();
+      </script>
     </div>
   </body>
 </html>
