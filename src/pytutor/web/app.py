@@ -304,7 +304,7 @@ def api_ai_hint(request: Request, payload: dict = Body(...)):
         raise HTTPException(status_code=429, detail="Too many AI requests. Try again in a minute.")
 
     api_key = request.headers.get("x-pytutor-openai-key")
-    if not (api_key or ai.ai_enabled()):
+    if not (api_key and api_key.strip()):
         raise HTTPException(status_code=400, detail="AI key missing. Add your OpenAI key in Settings.")
 
     track_id = str(payload.get("track_id") or "")
@@ -335,7 +335,7 @@ def api_ai_explain(request: Request, payload: dict = Body(...)):
         raise HTTPException(status_code=429, detail="Too many AI requests. Try again in a minute.")
 
     api_key = request.headers.get("x-pytutor-openai-key")
-    if not (api_key or ai.ai_enabled()):
+    if not (api_key and api_key.strip()):
         raise HTTPException(status_code=400, detail="AI key missing. Add your OpenAI key in Settings.")
 
     track_id = str(payload.get("track_id") or "")
@@ -366,7 +366,7 @@ def api_ai_review(request: Request, payload: dict = Body(...)):
         raise HTTPException(status_code=429, detail="Too many AI requests. Try again in a minute.")
 
     api_key = request.headers.get("x-pytutor-openai-key")
-    if not (api_key or ai.ai_enabled()):
+    if not (api_key and api_key.strip()):
         raise HTTPException(status_code=400, detail="AI key missing. Add your OpenAI key in Settings.")
 
     track_id = str(payload.get("track_id") or "")
