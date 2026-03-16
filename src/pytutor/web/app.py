@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 import uvicorn
@@ -114,4 +115,10 @@ def reset_exercise(track_id: str, exercise_id: str):
 
 
 def main() -> None:
-    uvicorn.run(app, host="127.0.0.1", port=8000)
+    host = os.environ.get("PYTUTOR_HOST") or os.environ.get("HOST") or "127.0.0.1"
+    port_raw = os.environ.get("PYTUTOR_PORT") or os.environ.get("PORT") or "8010"
+    try:
+        port = int(port_raw)
+    except ValueError:
+        port = 8010
+    uvicorn.run(app, host=host, port=port)
