@@ -1,0 +1,46 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{{ track.title }} - Python Project Tutor</title>
+    <link rel="stylesheet" href="/static/site.css" />
+  </head>
+  <body>
+    <div class="container">
+      <header class="header">
+        <a class="link" href="/">← All tracks</a>
+        <h1>{{ track.title }}</h1>
+        <p class="muted">{{ track.level }} • {{ track.description }}</p>
+      </header>
+
+      {% for lesson in track.lessons %}
+      <section class="card">
+        <h2>{{ lesson.title }}</h2>
+        <div class="md">{{ lesson.content_md }}</div>
+
+        {% if lesson.exercises %}
+        <h3>Exercises</h3>
+        <div class="grid">
+          {% for ex in lesson.exercises %}
+          <a class="exercise" href="/track/{{ track.id }}/exercise/{{ ex.id }}">
+            <div class="row">
+              <div>
+                <div class="title">{{ ex.title }}</div>
+                <div class="muted">{{ ex.id }}</div>
+              </div>
+              {% if ex.id in completed %}
+              <div class="pill ok">Completed</div>
+              {% else %}
+              <div class="pill">Start</div>
+              {% endif %}
+            </div>
+          </a>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </section>
+      {% endfor %}
+    </div>
+  </body>
+</html>

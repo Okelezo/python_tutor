@@ -1,0 +1,54 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{{ exercise.title }} - Python Project Tutor</title>
+    <link rel="stylesheet" href="/static/site.css" />
+  </head>
+  <body>
+    <div class="container">
+      <header class="header">
+        <a class="link" href="/track/{{ track.id }}">← {{ track.title }}</a>
+        <h1>{{ exercise.title }}</h1>
+        <p class="muted">{{ lesson_title }} • {{ exercise.id }}</p>
+      </header>
+
+      <section class="card">
+        <div class="md">{{ exercise.prompt_md }}</div>
+      </section>
+
+      <section class="card">
+        <form method="post">
+          <label class="label">Your code</label>
+          <textarea class="code" name="code" spellcheck="false">{{ code }}</textarea>
+          <div class="actions">
+            <button class="btn" type="submit">Run tests</button>
+            <button class="btn secondary" type="submit" formaction="/track/{{ track.id }}/exercise/{{ exercise.id }}/reset">Reset</button>
+            {% if exercise.id in completed %}
+            <span class="pill ok">Completed</span>
+            {% endif %}
+          </div>
+        </form>
+
+        {% if result %}
+        <div class="result {% if result.passed %}ok{% else %}bad{% endif %}">
+          <div class="row">
+            {% if result.passed %}
+            <strong>Passed</strong>
+            {% else %}
+            <strong>Not yet</strong>
+            {% endif %}
+            {% if result.failed_test %}
+            <span class="muted">{{ result.failed_test }}</span>
+            {% endif %}
+          </div>
+          {% if result.output %}
+          <pre class="output">{{ result.output }}</pre>
+          {% endif %}
+        </div>
+        {% endif %}
+      </section>
+    </div>
+  </body>
+</html>
